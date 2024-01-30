@@ -2,74 +2,90 @@ import streamlit as st
 import requests
 
 # Base URL for the API
-BASE_URL = "https://api.sample.com/v1"
+BASE_URL = "https://debug-tool-xca4qjgx4a-uc.a.run.app/"
 
-st.title("Book Management System")
+st.title("Debugging Dashboard")
 
-# List all books
-if st.button("List Books"):
-    response = requests.get(f"{BASE_URL}/books")
+# Security scheme: API Key
+api_key = st.sidebar.text_input("Enter your API Key")
+
+headers = {"X-Api-Key": api_key}
+
+# Get Tasks By Discord
+discord_id = st.text_input("Enter Discord ID to get tasks")
+if discord_id and st.button("Get Tasks by Discord"):
+    response = requests.get(
+        f"{BASE_URL}/debug/tasksbydiscord/{discord_id}", headers=headers
+    )
     if response.status_code == 200:
-        books = response.json()
-        st.dataframe(books)
+        tasks = response.json()
+        st.json(tasks)
     else:
-        st.error("Failed to retrieve books")
+        st.error("Failed to retrieve tasks for Discord ID")
 
-# Create a new book
-with st.form(key="new_book_form"):
-    new_book_title = st.text_input("Book Title")
-    new_book_author = st.text_input("Book Author")
-    new_book_isbn = st.text_input("Book ISBN")
-    submit_new_book = st.form_submit_button("Create Book")
-    if submit_new_book:
-        new_book_data = {
-            "title": new_book_title,
-            "author": new_book_author,
-            "isbn": new_book_isbn,
-        }
-        response = requests.post(f"{BASE_URL}/books", json=new_book_data)
-        if response.status_code == 201:
-            st.success("Book created successfully")
-        else:
-            st.error("Failed to create a new book")
+# Get Tasks By User
+user_id = st.text_input("Enter User ID to get tasks")
+if user_id and st.button("Get Tasks by User"):
+    response = requests.get(f"{BASE_URL}/debug/tasksbyuser/{user_id}", headers=headers)
+    if response.status_code == 200:
+        tasks = response.json()
+        st.json(tasks)
+    else:
+        st.error("Failed to retrieve tasks for User ID")
 
-# Get, Update or Delete a book by ID
-book_id = st.text_input("Enter Book ID for Details, Update or Delete")
-
-if book_id:
-    # Get book details
-    if st.button("Get Book Details"):
-        response = requests.get(f"{BASE_URL}/books/{book_id}")
+# Get Debug Summary, Debug Logs, Debug Steps, Debug Step, Debug Step Llm Calls
+task_id = st.text_input("Enter Task ID for Debug Details")
+if task_id:
+    # Get Debug Summary
+    if st.button("Get Debug Summary"):
+        response = requests.get(f"{BASE_URL}/debug/task/{task_id}/", headers=headers)
         if response.status_code == 200:
-            book_details = response.json()
-            st.json(book_details)
+            summary = response.json()
+            st.json(summary)
         else:
-            st.error("Failed to retrieve book details")
+            st.error("Failed to retrieve debug summary")
 
-    # Update a book
-    with st.form(key="update_book_form"):
-        update_book_title = st.text_input("Update Book Title")
-        update_book_author = st.text_input("Update Book Author")
-        update_book_isbn = st.text_input("Update Book ISBN")
-        submit_update_book = st.form_submit_button("Update Book")
-        if submit_update_book:
-            update_book_data = {
-                "title": update_book_title,
-                "author": update_book_author,
-                "isbn": update_book_isbn,
-            }
-            response = requests.put(
-                f"{BASE_URL}/books/{book_id}", json=update_book_data
-            )
-            if response.status_code == 200:
-                st.success("Book updated successfully")
-            else:
-                st.error("Failed to update the book")
-
-    # Delete a book
-    if st.button("Delete Book"):
-        response = requests.delete(f"{BASE_URL}/books/{book_id}")
-        if response.status_code == 204:
-            st.success("Book deleted successfully")
+    # Get Debug Logs
+    if st.button("Get Debug Logs"):
+        response = requests.get(
+            f"{BASE_URL}/debug/task/{task_id}/logs", headers=headers
+        )
+        if response.status_code == 200:
+            logs = response.json()
+            st.json(logs)
         else:
-            st.error("Failed to delete the book")
+            st.error("Failed to retrieve debug logs")
+
+    # Get Debug Steps
+    if st.button("Get Debug Steps"):
+        response = requests.get(
+            f"{BASE_URL}/debug/task/{task_id}/steps", headers=headers
+        )
+        if response.status_code == 200:
+            steps = response.json()
+            st.json(steps)
+        else:
+            st.error("Failed to retrieve debug steps")
+
+    # Get Debug Step
+    step_id = st.text_input("Enter Step ID for Debug Step Details")
+    if step_id and st.button("Get Debug Step"):
+        response = requests.get(
+            f"{BASE_URL}/debug/task/{task_id}/steps/{step_id}", headers=headers
+        )
+        if response.status_code == 200:
+            step_details = response.json()
+            st.json(step_details)
+        else:
+            st.error("Failed to retrieve debug step")
+
+    # Get Debug Step Llm Calls
+    if st.button("Get Debug Step Llm Calls"):
+        response = requests.get(
+            f"{BASE_URL}/debug/task/{task_id}/steps/{step_id}/openai", headers=headers
+        )
+        if response.status_code == 200:
+            llm_calls = response.json()
+            st.json(llm_calls)
+        else:
+            st.error("Failed to retrieve debug step LLM calls")
