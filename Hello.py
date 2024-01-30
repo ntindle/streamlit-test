@@ -2,90 +2,84 @@ import streamlit as st
 import requests
 
 # Base URL for the API
-BASE_URL = "https://debug-tool-xca4qjgx4a-uc.a.run.app/"
+BASE_URL = "https://auto-gpt-xca4qjgx4a-uc.a.run.app"
 
-st.title("Debugging Dashboard")
 
-# Security scheme: API Key
-api_key = st.sidebar.text_input("Enter your API Key")
+# Helper function to make API requests
+def make_api_request(endpoint, method="get", data=None, params=None):
+    url = f"{BASE_URL}{endpoint}"
+    if method == "get":
+        response = requests.get(url, params=params)
+    elif method == "post":
+        response = requests.post(url, json=data)
+    return response.json()
 
-headers = {"X-Api-Key": api_key}
 
-# Get Tasks By Discord
-discord_id = st.text_input("Enter Discord ID to get tasks")
-if discord_id and st.button("Get Tasks by Discord"):
-    response = requests.get(
-        f"{BASE_URL}/debug/tasksbydiscord/{discord_id}", headers=headers
+# GUI Layout
+st.title("Agent Protocol Interface")
+
+# Create a new task
+st.header("Create a New Task")
+task_input = st.text_input("Input prompt for the task")
+additional_task_input = st.text_area("Additional Input for the Task (JSON format)")
+if st.button("Create Task"):
+    task_data = {"input": task_input, "additional_input": additional_task_input}
+    response = make_api_request("/ap/v1/agent/tasks", method="post", data=task_data)
+    st.write(response)
+
+# List all tasks
+st.header("List All Tasks")
+current_page_tasks = st.number_input("Current Page (Tasks)", min_value=1, value=1)
+page_size_tasks = st.number_input("Page Size (Tasks)", min_value=1, value=10)
+if st.button("Get Tasks"):
+    params = {"current_page": current_page_tasks, "page_size": page_size_tasks}
+    tasks = make_api_request("/ap/v1/agent/tasks", params=params)
+    st.write(tasks)
+
+# Get details about a specified task
+st.header("Get Task Details")
+task_id = st.text_input("Enter Task ID")
+if st.button("Get Task Details"):
+    task_details = make_api_request(f"/ap/v1/agent/tasks/{task_id}")
+    st.write(task_details)
+
+# List all steps for a specified task
+st.header("List Steps for a Task")
+current_page_steps = st.number_input("Current Page (Steps)", min_value=1, value=1)
+page_size_steps = st.number_input("Page Size (Steps)", min_value=1, value=10)
+if st.button("Get Task Steps"):
+    params = {"current_page": current_page_steps, "page_size": page_size_steps}
+    steps = make_api_request(f"/ap/v1/agent/tasks/{task_id}/steps", params=params)
+    st.write(steps)
+
+# Execute a step in the specified task
+st.header("Execute Task Step")
+step_input = st.text_area("Input for the Step (JSON format)")
+if st.button("Execute Step"):
+    step_data = {"input": step_input}
+    response = make_api_request(
+        f"/ap/v1/agent/tasks/{task_id}/steps", method="post", data=step_data
     )
-    if response.status_code == 200:
-        tasks = response.json()
-        st.json(tasks)
-    else:
-        st.error("Failed to retrieve tasks for Discord ID")
+    st.write(response)
 
-# Get Tasks By User
-user_id = st.text_input("Enter User ID to get tasks")
-if user_id and st.button("Get Tasks by User"):
-    response = requests.get(f"{BASE_URL}/debug/tasksbyuser/{user_id}", headers=headers)
-    if response.status_code == 200:
-        tasks = response.json()
-        st.json(tasks)
-    else:
-        st.error("Failed to retrieve tasks for User ID")
+# List all artifacts for a task
+st.header("List Artifacts for a Task")
+if st.button("Get Task Artifacts"):
+    artifacts = make_api_request(f"/ap/v1/agent/tasks/{task_id}/artifacts")
+    st.write(artifacts)
 
-# Get Debug Summary, Debug Logs, Debug Steps, Debug Step, Debug Step Llm Calls
-task_id = st.text_input("Enter Task ID for Debug Details")
-if task_id:
-    # Get Debug Summary
-    if st.button("Get Debug Summary"):
-        response = requests.get(f"{BASE_URL}/debug/task/{task_id}/", headers=headers)
-        if response.status_code == 200:
-            summary = response.json()
-            st.json(summary)
-        else:
-            st.error("Failed to retrieve debug summary")
+# Upload an artifact for a task
+st.header("Upload Artifact for a Task")
+uploaded_file = st.file_uploader("Choose a file")
+if st.button("Upload Artifact"):
+    # Handle file upload
+    # Note: Actual file upload implementation will depend on the API requirements
+    st.write("Artifact uploaded (mock response)")
 
-    # Get Debug Logs
-    if st.button("Get Debug Logs"):
-        response = requests.get(
-            f"{BASE_URL}/debug/task/{task_id}/logs", headers=headers
-        )
-        if response.status_code == 200:
-            logs = response.json()
-            st.json(logs)
-        else:
-            st.error("Failed to retrieve debug logs")
-
-    # Get Debug Steps
-    if st.button("Get Debug Steps"):
-        response = requests.get(
-            f"{BASE_URL}/debug/task/{task_id}/steps", headers=headers
-        )
-        if response.status_code == 200:
-            steps = response.json()
-            st.json(steps)
-        else:
-            st.error("Failed to retrieve debug steps")
-
-    # Get Debug Step
-    step_id = st.text_input("Enter Step ID for Debug Step Details")
-    if step_id and st.button("Get Debug Step"):
-        response = requests.get(
-            f"{BASE_URL}/debug/task/{task_id}/steps/{step_id}", headers=headers
-        )
-        if response.status_code == 200:
-            step_details = response.json()
-            st.json(step_details)
-        else:
-            st.error("Failed to retrieve debug step")
-
-    # Get Debug Step Llm Calls
-    if st.button("Get Debug Step Llm Calls"):
-        response = requests.get(
-            f"{BASE_URL}/debug/task/{task_id}/steps/{step_id}/openai", headers=headers
-        )
-        if response.status_code == 200:
-            llm_calls = response.json()
-            st.json(llm_calls)
-        else:
-            st.error("Failed to retrieve debug step LLM calls")
+# Download a specified artifact
+st.header("Download Artifact")
+artifact_id = st.text_input("Enter Artifact ID")
+if st.button("Download Artifact"):
+    # Handle artifact download
+    # Note: Actual download implementation will depend on the API requirements
+    st.write("Artifact downloaded (mock response)")
