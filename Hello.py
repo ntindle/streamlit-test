@@ -1,51 +1,75 @@
-# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022)
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import streamlit as st
-from streamlit.logger import get_logger
+import requests
 
-LOGGER = get_logger(__name__)
+# Base URL for the API
+BASE_URL = "https://api.sample.com/v1"
 
+st.title("Book Management System")
 
-def run():
-    st.set_page_config(
-        page_title="Hello",
-        page_icon="👋",
-    )
+# List all books
+if st.button("List Books"):
+    response = requests.get(f"{BASE_URL}/books")
+    if response.status_code == 200:
+        books = response.json()
+        st.dataframe(books)
+    else:
+        st.error("Failed to retrieve books")
 
-    st.write("# Welcome to Streamlit! 👋")
+# Create a new book
+with st.form(key="new_book_form"):
+    new_book_title = st.text_input("Book Title")
+    new_book_author = st.text_input("Book Author")
+    new_book_isbn = st.text_input("Book ISBN")
+    submit_new_book = st.form_submit_button("Create Book")
+    if submit_new_book:
+        new_book_data = {
+            "title": new_book_title,
+            "author": new_book_author,
+            "isbn": new_book_isbn,
+        }
+        response = requests.post(f"{BASE_URL}/books", json=new_book_data)
+        if response.status_code == 201:
+            st.success("Book created successfully")
+        else:
+            st.error("Failed to create a new book")
 
-    st.sidebar.success("Select a demo above.")
+# Get, Update or Delete a book by ID
+book_id = st.text_input("Enter Book ID for Details, Update or Delete")
 
-    st.markdown(
-        """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
-        ### See more complex demos
-        - Use a neural net to [analyze the Udacity Self-driving Car Image
-          Dataset](https://github.com/streamlit/demo-self-driving)
-        - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    """
-    )
+if book_id:
+    # Get book details
+    if st.button("Get Book Details"):
+        response = requests.get(f"{BASE_URL}/books/{book_id}")
+        if response.status_code == 200:
+            book_details = response.json()
+            st.json(book_details)
+        else:
+            st.error("Failed to retrieve book details")
 
+    # Update a book
+    with st.form(key="update_book_form"):
+        update_book_title = st.text_input("Update Book Title")
+        update_book_author = st.text_input("Update Book Author")
+        update_book_isbn = st.text_input("Update Book ISBN")
+        submit_update_book = st.form_submit_button("Update Book")
+        if submit_update_book:
+            update_book_data = {
+                "title": update_book_title,
+                "author": update_book_author,
+                "isbn": update_book_isbn,
+            }
+            response = requests.put(
+                f"{BASE_URL}/books/{book_id}", json=update_book_data
+            )
+            if response.status_code == 200:
+                st.success("Book updated successfully")
+            else:
+                st.error("Failed to update the book")
 
-if __name__ == "__main__":
-    run()
+    # Delete a book
+    if st.button("Delete Book"):
+        response = requests.delete(f"{BASE_URL}/books/{book_id}")
+        if response.status_code == 204:
+            st.success("Book deleted successfully")
+        else:
+            st.error("Failed to delete the book")
